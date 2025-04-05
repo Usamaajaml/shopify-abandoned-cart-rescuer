@@ -1,0 +1,33 @@
+{% comment %}
+  Shopify Abandoned Cart Rescuer
+  Version: 1.0
+  Instructions: Add to theme.liquid before </body>
+{% endcomment %}
+
+<script>
+  // Track cart activity
+  if (window.location.href.includes('cart') || window.location.href.includes('checkout')) {
+    localStorage.setItem('lastCartUpdate', Date.now());
+  }
+
+  // Automated reminder system
+  function fireAbandonedCartEvent() {
+    const lastCartTime = localStorage.getItem('lastCartUpdate');
+    const cartTotal = {{ cart.total_price | json }};
+    
+    if (lastCartTime && cartTotal > 5000) { // $50+ carts
+      fetch('/apps/cart-rescuer/send-reminder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cart: {{ cart.items | json }},
+          discount_code: "RESCUE10",
+          expires_at: Date.now() + 172800000 // 48 hours
+        })
+      });
+    }
+  }
+
+  // Run check every 6 hours (configure in Shopify Flow)
+  setTimeout(fireAbandonedCartEvent, 21600000);
+</script>
